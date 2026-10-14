@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HireBridge USA — Find Jobs & Apply</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Arial,sans-serif; }
+  body { background:#f4f6f9; color:#222; }
+  header { background:#1a3c6e; color:#fff; padding:18px 40px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
+  header h1 span { color:#f5a623; }
+  nav a { color:#fff; text-decoration:none; margin-left:24px; font-weight:500; }
+  nav a:hover { color:#f5a623; }
+  .hero { background:linear-gradient(135deg,#1a3c6e,#2e6da4); color:#fff; text-align:center; padding:50px 20px; }
+  .hero h2 { font-size:1.9rem; margin-bottom:8px; }
+  .container { max-width:1000px; margin:30px auto; padding:0 20px; }
+  .card { background:#fff; border-radius:10px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,.08); margin-bottom:24px; }
+  .search-bar { display:flex; gap:10px; flex-wrap:wrap; }
+  .search-bar input { flex:1; min-width:200px; padding:12px; border:1px solid #ccc; border-radius:6px; font-size:1rem; }
+  button { background:#f5a623; border:none; color:#1a3c6e; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem; }
+  button:hover { background:#e69510; }
+  .job { border:1px solid #e2e6ea; border-radius:8px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+  .job h3 { color:#1a3c6e; }
+  .tag { display:inline-block; background:#eef3fa; color:#1a3c6e; font-size:.8rem; padding:3px 10px; border-radius:12px; margin:2px 6px 2px 0; }
+  .apply-btn { padding:8px 18px; font-size:.9rem; }
+  label { display:block; margin:12px 0 5px; font-weight:600; }
+  input[type=text], input[type=email], select { width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; font-size:1rem; }
+  .fee-box { background:#fdf6e3; border-left:4px solid #f5a623; padding:14px; margin-top:16px; border-radius:4px; display:none; }
+  .status { font-size:.85rem; color:#777; margin-top:10px; }
+  .spinner { display:inline-block; width:16px; height:16px; border:3px solid #ccc; border-top-color:#f5a623; border-radius:50%; animation:spin .8s linear infinite; vertical-align:-3px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  footer { text-align:center; padding:24px; color:#777; font-size:.85rem; margin-top:40px; }
+  .disclaimer { font-size:.78rem; color:#888; margin-top:12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Hire<span>Bridge</span> USA</h1>
+  <nav><a href="#jobs">Browse Jobs</a><a href="#apply">Apply</a></nav>
+</header>
+
+<section class="hero">
+  <h2>Find Casual & Full-Time Jobs Across the USA</h2>
+  <p>Live listings, apply in minutes — U.S. citizens and international applicants welcome.</p>
+</section>
+
+<div class="container">
+
+  <div class="card" id="jobs">
+    <h2>Available Jobs</h2><br>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search job title, company, or category (e.g., warehouse, customer support)">
+      <button onclick="filterJobs()">Search</button>
+    </div>
+    <div class="status" id="loadStatus"><span class="spinner"></span> Loading live job listings…</div>
+    <div id="jobList" style="margin-top:16px;"></div>
+  </div>
+
+  <div class="card" id="apply">
+    <h2>Job Application</h2><br>
+    <label>Full Name</label><input type="text" id="fullName" placeholder="Jane Doe">
+    <label>Email Address</label><input type="email" id="email" placeholder="jane@example.com">
+    <label>Selected Job</label><select id="jobSelect"></select>
+    <label>Are you a U.S. citizen or permanent resident?</label>
+    <select id="residency" onchange="updateFees()">
+      <option value="">-- Select --</option>
+      <option value="citizen">Yes — U.S. Citizen / Permanent Resident</option>
+      <option value="noncitizen">No — Non-Resident / International Applicant</option>
+    </select>
+    <div id="visaQ" style="display:none">
+      <label>Do you already have a valid U.S. work visa?</label>
+      <select id="hasVisa" onchange="updateFees()">
+        <option value="">-- Select --</option>
+        <option value="yes">Yes — I have a valid work visa</option>
+        <option value="no">No — I need to start a visa application</option>
+      </select>
+    </div>
+    <div class="fee-box" id="feeBox"></div>
+    <br><button onclick="submitApplication()">Submit Application</button>
+    <p class="disclaimer">Disclaimer: HireBridge USA is a private job-application service, not affiliated with the U.S. government. Official visa applications are processed only through USCIS and the U.S. Department of State; fees shown cover our application-processing and visa-guidance services where applicable.</p>
+  </div>
+
+</div>
+
+<footer>HireBridge USA &copy; 2026 — USA only. More countries coming soon.</footer>
+
+<script>
+  const JOB_APP_FEE = 25;
+  const VISA_SERVICE_FEE = 99;
+  let allJobs = [];
+
+  const fallbackJobs = [
+    { title:"Warehouse Associate", company:"Metro Logistics", location:"Dallas, TX", type:"Casual / Full-time", pay:"$16–18/hr", url:"#" },
+    { title:"Fruit Picking & Farm Hand", company:"Sunridge Farms", location:"Fresno, CA", type:"Seasonal", pay:"$15–17/hr", url:"#" },
+    { title:"Hotel Housekeeper", company:"Grandview Inn", location:"Orlando, FL", type:"Casual / Part-time", pay:"$14–16/hr", url:"#" },
+    { title:"Delivery Driver", company:"SwiftShip", location:"Chicago, IL", type:"Full-time", pay:"$18–21/hr", url:"#" },
+    { title:"Kitchen Assistant", company:"Blue Diner Group", location:"Austin, TX", type:"Casual / Part-time", pay:"$14–16/hr", url:"#" },
+    { title:"Retail Stock Associate", company:"ValueMart", location:"Columbus, OH", type:"Casual", pay:"$13–15/hr", url:"#" },
+  ];
+
+  async function loadLiveJobs() {
+    try {
+      // Remotive public API — no key required, CORS-friendly
+      const r = await fetch("https://remotive.com/api/remote-jobs?limit=60");
+      const data = await r.json();
+      const usJobs = data.jobs
+        .filter(j => (j.candidate_required_location || "").toLowerCase().includes("usa")
+                  || (j.candidate_required_location || "").toLowerCase().includes("united states")
+                  || (j.candidate_required_location || "").toLowerCase() === "anywhere")
+        .map(j => ({
+          title: j.title,
+          company: j.company_name,
+          location: j.candidate_required_location || "Remote (Anywhere)",
+          type: j.job_type || "Full-time",
+          pay: j.salary || "See posting",
+          url: j.url
+        }));
+      if (usJobs.length > 0) {
+        allJobs = usJobs;
+        document.getElementById("loadStatus").innerHTML = "✔ Loaded " + usJobs.length + " live listings (source: Remotive).";
+      } else throw new Error("no US jobs");
+    } catch (e) {
+      allJobs = fallbackJobs;
+      document.getElementById("loadStatus").innerHTML = "⚠ Live feed unavailable — showing sample U.S. casual jobs.";
+    }
+    renderJobs(allJobs);
+    fillSelect();
+  }
+
+  function renderJobs(list) {
+    document.getElementById("jobList").innerHTML = list.length === 0
+      ? "<p>No jobs match your search.</p>"
+      : list.map(j => `
+        <div class="job">
+          <div>
+            <h3>${esc(j.title)}</h3>
+            <div style="margin:6px 0;">
+              <span class="tag">${esc(j.company)}</span>
+              <span class="tag">${esc(j.location)}</span>
+              <span class="tag">${esc(j.type)}</span>
+              <span class="tag">${esc(j.pay)}</span>
+            </div>
+          </div>
+          <button class="apply-btn" onclick="selectJob('${esc(j.title)} — ${esc(j.location)}')">Apply</button>
+        </div>`).join("");
+  }
+
+  function esc(s){ const d=document.createElement("div"); d.textContent=s||""; return d.innerHTML; }
+
+  function filterJobs() {
+    const q = document.getElementById("searchInput").value.toLowerCase();
+    renderJobs(allJobs.filter(j => (j.title+j.location+j.company+j.type).toLowerCase().includes(q)));
+  }
+
+  function selectJob(label) {
+    const sel = document.getElementById("jobSelect");
+    for (const o of sel.options) if (o.text === label) sel.value = o.value;
+    document.getElementById("apply").scrollIntoView({ behavior:"smooth" });
+  }
+
+  function fillSelect() {
+    const sel = document.getElementById("jobSelect");
+    sel.innerHTML = "";
+    allJobs.forEach((j,i) => { const o=document.createElement("option"); o.value=i; o.textContent=j.title+" — "+j.location; sel.appendChild(o); });
+  }
+
+  function updateFees() {
+    const res = document.getElementById("residency").value;
+    document.getElementById("visaQ").style.display = res === "noncitizen" ? "block" : "none";
+    const box = document.getElementById("feeBox");
+    let lines = [];
+    if (res === "citizen") {
+      lines.push("✔ No visa required as a U.S. citizen/resident.");
+      lines.push("Job Application Processing Fee: <b>$"+JOB_APP_FEE+"</b>");
+    } else if (res === "noncitizen") {
+      const v = document.getElementById("hasVisa").value;
+      if (v === "yes") {
+        lines.push("✔ You already hold a valid work visa — no visa service fee needed.");
+        lines.push("Job Application Processing Fee: <b>$"+JOB_APP_FEE+"</b>");
+      } else if (v === "no") {
+        lines.push("ℹ Visa application guidance & processing service: <b>$"+VISA_SERVICE_FEE+"</b>");
+        lines.push("Job Application Processing Fee: <b>$"+JOB_APP_FEE+"</b>");
+        lines.push("Total due today: <b>$"+(JOB_APP_FEE+VISA_SERVICE_FEE)+"</b>");
+      } else { box.style.display="none"; return; }
+    } else { box.style.display="none"; return; }
+    box.innerHTML = lines.join("<br>");
+    box.style.display = "block";
+  }
+
+  function submitApplication() {
+    if (!document.getElementById("fullName").value || !document.getElementById("email").value) { alert("Please enter your full name and email."); return; }
+    if (!document.getElementById("residency").value) { alert("Please select your residency status."); return; }
+    if (document.getElementById("residency").value === "noncitizen" && !document.getElementById("hasVisa").value) { alert("Please select whether you have a valid U.S. work visa."); return; }
+    const job = document.getElementById("jobSelect").selectedOptions[0].textContent;
+    alert("Application submitted for: " + job + "\nA confirmation email with payment instructions will follow.");
+  }
+
+  loadLiveJobs();
+</script>
+
+</body>
+</html>
